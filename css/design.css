@@ -10,9 +10,7 @@ body{
     padding: 0px;
 }
 
-canvas#canvas{
-    display: block;
-    width: 960px;
+#enchant-stage{
     margin: 0px auto;
-    padding: 0px;
+    width: 100%;
 }
