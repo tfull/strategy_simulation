@@ -17,8 +17,8 @@ function Stage(assets){
 Stage.prototype.load = function(args){
     var stage = StageData.find(args.stage_id);
     this.field = stage.field;
-    this.vertex.x = (stage.field[0].length - this.block_size) / 2;
-    this.vertex.y = (stage.field.length - this.block_size) / 2;
+    this.vertex.x = parseInt((stage.field[0].length - this.block_size) / 2);
+    this.vertex.y = parseInt((stage.field.length - this.block_size) / 2);
 
     this.drawField();
 };
@@ -30,13 +30,13 @@ Stage.prototype.drawField = function(){
 
     for(var i = 0; i < this.block_size; i++){
         for(var j = 0; j < this.block_size; j++){
-            var x = this.vertex.x + i;
-            var y = this.vertex.y + j;
+            var x = this.vertex.x + j;
+            var y = this.vertex.y + i;
             if(x >= 0 && x < this.field[0].length && y >= 0 && y < this.field.length){
-                var sprite = new Sprite(this.cell_size, this.cell_size);
-                sprite.backgroundColor = "rgb(0, 255, 0)";
-                sprite.x = j * this.cell_size;
-                sprite.y = i * this.cell_size;
+                var image = GeographyData.find(this.field[y][x]).image;
+                var sprite = makeImageSprite(image, this.cell_size, this.cell_size, j * this.cell_size, i * this.cell_size);
+                sprite.image = getImage(this.assets, image.path);
+
                 this.view.field.addChild(sprite);
             }
         }

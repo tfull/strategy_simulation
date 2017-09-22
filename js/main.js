@@ -2,12 +2,10 @@
     window.onload = function(){
         enchant();
         var game = new Core(Master.screen_width, Master.screen_height);
-        var bear = new Sprite(32, 32);
-        var key = new Key();
-        bear.backgroundColor = "rgba(255, 0, 0, 1)";
-        game.rootScene.addChild(bear);
         game.fps = 24;
+        var key = new Key();
         key.bind(game);
+        GeographyData.load(game);
         var title = new Title(game.assets);
         var stage = new Stage(game.assets);
         var mode = "title";
