@@ -6,10 +6,10 @@
         var key = new Key();
         key.bind(game);
         GeographyData.load(game);
+        UnitData.load(game);
         var title = new Title(game.assets);
         var stage = new Stage(game.assets);
         var mode = "title";
-        var debug = document.getElementById("debug");
 
         game.onload = function(){
         };

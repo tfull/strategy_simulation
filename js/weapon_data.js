@@ -2,16 +2,25 @@ var WeaponData = (function(){
     var data = [
         {
             id: 1,
-            weapon: Weapon("sword", "ponkikki sword", 3, 80)
+            expression: {
+                name: "ponkikki sword",
+                type: "sword",
+                power: 3,
+                accuracy: 80
+            }
         }
 
     ];
 
-    var _find = function(id){
+    function instantiate(expression){
+        return new Weapon(expression.name, expression.type, expression.power, expression.accuracy);
+    }
+
+    function _find(id){
         var n = data.length;
         for(var i = 0; i < n; i++){
             if(data[i].id == id){
-                return data[i].weapon;
+                return instantiate(data[i].expression);
             }
         }
     }
