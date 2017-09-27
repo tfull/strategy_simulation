@@ -41,6 +41,18 @@
                 }
                 game.pushScene(title.scene);
             }else if(mode == "stage"){
+                if(key.up()){
+                    stage.keyUp();
+                }
+                if(key.down()){
+                    stage.keyDown();
+                }
+                if(key.left()){
+                    stage.keyLeft();
+                }
+                if(key.right()){
+                    stage.keyRight();
+                }
                 game.pushScene(stage.scene);
             }
         });

@@ -11,28 +11,43 @@ function Stage(assets){
     var view_status = new Group();
     view_status.x = Master.screen_height;
     this.view = { field: view_field };
-    this.vertex = { x: 1, y: 1 };
+    this.vertex = new Point(1, 1);
+
+    this.cursor = new Point(0, 0);
 
     this.scene.addChild(this.view.field);
+
+    this.mode = "field";
 }
 
 Stage.prototype.load = function(args){
     var stage = StageData.find(args.stage_id);
     var field = stage.field;
     this.field = field;
-    this.vertex.x = parseInt((field.width - this.block_size) / 2);
-    this.vertex.y = parseInt((field.height- this.block_size) / 2);
     this.player = stage.player;
     this.enemy = stage.enemy;
+    this.cursor = new Point(this.player[0].x, this.player[0].y);
+
+    if(field.width < this.block_size){
+        this.vertex.x = parseInt((field.width - this.block_size) / 2);
+    }else{
+        this.vertex.x = this.player[0].x - parseInt(this.block_size / 2);
+    }
+    if(field.height < this.block_size){
+        this.vertex.y = parseInt((field.height - this.block_size) / 2);
+    }else{
+        this.vertex.y = this.player[0].y - parseInt(this.block_size / 2);
+    }
 
     this.clearField();
     this.drawField();
     this.drawUnits();
+    this.drawCursor();
 };
 
 Stage.prototype.clearField = function(){
     while(this.view.field.firstChild){
-        this.view.field.removeChild(this.view.field.firstChid);
+        this.view.field.removeChild(this.view.field.firstChild);
     }
 }
 
@@ -78,4 +93,76 @@ Stage.prototype.drawUnits = function(){
             this.view.field.addChild(sprite);
         }
     }
-}
+};
+
+Stage.prototype.drawCursor = function(){
+    var j_cell = this.cursor.x - this.vertex.x;
+    var i_cell = this.cursor.y - this.vertex.y;
+    if(j_cell >= 0 && j_cell < this.block_size && i_cell >= 0 && i_cell < this.block_size){
+        var sprite = new Sprite(this.cell_size, this.cell_size);
+        sprite.backgroundColor = "rgba(128, 128, 0, 0.2)";
+        sprite.x = j_cell * this.cell_size;
+        sprite.y = i_cell * this.cell_size;
+        this.view.field.addChild(sprite);
+    }
+};
+
+Stage.prototype.keyLeft = function(){
+    if(this.mode == "field"){
+        if(this.cursor.x > 0){
+            this.cursor.x -= 1;
+            if(this.cursor.x < this.vertex.x){
+                this.vertex.x = this.cursor.x;
+            }
+            this.clearField();
+            this.drawField();
+            this.drawUnits();
+            this.drawCursor();
+        }
+    }
+};
+
+Stage.prototype.keyRight = function(){
+    if(this.mode == "field"){
+        if(this.cursor.x < this.field.width - 1){
+            this.cursor.x += 1;
+            if(this.cursor.x > this.vertex.x + (this.block_size - 1)){
+                this.vertex.x = this.cursor.x - (this.block_size - 1);
+            }
+            this.clearField();
+            this.drawField();
+            this.drawUnits();
+            this.drawCursor();
+        }
+    }
+};
+
+Stage.prototype.keyUp = function(){
+    if(this.mode == "field"){
+        if(this.cursor.y > 0){
+            this.cursor.y -= 1;
+            if(this.cursor.y < this.vertex.y){
+                this.vertex.y = this.cursor.y;
+            }
+            this.clearField();
+            this.drawField();
+            this.drawUnits();
+            this.drawCursor();
+        }
+    }
+};
+
+Stage.prototype.keyDown = function(){
+    if(this.mode == "field"){
+        if(this.cursor.y < this.field.height - 1){
+            this.cursor.y += 1;
+            if(this.cursor.y > this.vertex.y + (this.block_size - 1)){
+                this.vertex.y = this.cursor.y - (this.block_size - 1);
+            }
+            this.clearField();
+            this.drawField();
+            this.drawUnits();
+            this.drawCursor();
+        }
+    }
+};
