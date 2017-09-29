@@ -53,6 +53,12 @@
                 if(key.right()){
                     stage.keyRight();
                 }
+                if(key.valid("a", "one")){
+                    stage.keyA();
+                }
+                if(key.valid("b", "one")){
+                    stage.keyB();
+                }
                 game.pushScene(stage.scene);
             }
         });

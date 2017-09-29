@@ -58,8 +58,8 @@ var StageData = (function(){
     ];
 
     function instantiate(expression){
-        var player = expression.player.map(function(u){ return { unit: UnitData.find(u.unit_id), point: new Point(u.x, u.y) }; });
-        var enemy = expression.enemy.map(function(u){ return { unit: UnitData.find(u.unit_id), point: new Point(u.x, u.y) }; });
+        var player = expression.player.map(function(u){ return { unit: UnitData.find(u.unit_id), point: new Point(u.x, u.y), affiliation: "player" }; });
+        var enemy = expression.enemy.map(function(u){ return { unit: UnitData.find(u.unit_id), point: new Point(u.x, u.y), affiliation: "enemy" }; });
         return { field: new Field(expression.field), player: player, enemy: enemy };
     }
 

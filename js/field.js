@@ -6,4 +6,19 @@ function Field(field){
 
 Field.prototype.at = function(x, y){
     return this.field[y][x];
-}
+};
+
+Field.prototype.valid = function(x, y){
+    return x >= 0 && x < this.width && y >= 0 && y < this.height;
+};
+
+Field.prototype.clone = function(){
+    var field = new Array(this.height);
+    for(var i = 0; i < this.height; i++){
+        field[i] = new Array(this.width);
+        for(var j = 0; j < this.width; j++){
+            field[i][j] = this.field[i][j];
+        }
+    }
+    return field;
+};

@@ -20,6 +20,7 @@ function Stage(assets){
     this.scene.addChild(this.view.status);
 
     this.mode = "field";
+    this.move_map = null;
 }
 
 Stage.prototype.load = function(args){
@@ -153,6 +154,70 @@ Stage.prototype.keyDown = function(){
     }
 };
 
+Stage.prototype.keyA = function(){
+    if(this.mode == "field"){
+        var unit_object = this.focusedUnitObject();
+        if(unit_object !== null && unit_object.affiliation == "player"){
+            this.mode == "movement";
+            var move_map = this.searchMovement(unit_object);
+            this.move_map = move_map;
+            this.updateField();
+        }
+    }
+};
+
+Stage.prototype.searchMovement = function(unit_object){
+    var unit = unit_object.unit;
+    var cost_map = this.field.clone();
+    for(var i = 0; i < this.field.height; i++){
+        for(var j = 0; j < this.field.width; j++){
+            cost_map[i][j] = unit.getMoveCost(cost_map[i][j]);
+        }
+    }
+    if(unit_object.affiliation == "player"){
+        var n = this.enemy.length;
+        for(var i = 0; i < n; i++){
+            var point = this.enemy[i].point;
+            cost_map[point.y][point.x] = 10000;
+        }
+    }else{
+        var n = this.player.length;
+        for(var i = 0; i < n; i++){
+            var point = this.player[i].point;
+            cost_map[point.y][point.x] = 10000;
+        }
+    }
+    var move_map = this.field.clone();
+    for(var i = 0; i < this.field.height; i++){
+        for(var j = 0; j < this.field.width; j++){
+            move_map[i][j] = -1;
+        }
+    }
+
+    var queue = [{ point: unit_object.point, move: unit_object.unit.movement }];
+    while(queue.length > 0){
+        var object = queue.shift();
+        var point = object.point;
+        var move = object.move;
+        if(move_map[point.y][point.x] == -1 || move_map[point.y][point.x] < move){
+            move_map[point.y][point.x] = move;
+            var diff = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+            for(var i = 0; i < diff.length; i++){
+                var x_new = point.x + diff[i][0];
+                var y_new = point.y + diff[i][1];
+                if(x_new >= 0 && x_new < this.field.width && y_new >= 0 && y_new < this.field.height){
+                    var new_move = move - cost_map[y_new][x_new];
+                    if(new_move >= 0){
+                        queue.push({ point: new Point(x_new, y_new), move: new_move });
+                    }
+                }
+            }
+        }
+    }
+
+    return move_map;
+};
+
 Stage.prototype.drawStatus = function(){
     var sprite_width = Master.screen_width - Master.screen_height;
     var sprite_height = parseInt(Master.screen_height / 2);
@@ -181,6 +246,17 @@ Stage.prototype.drawStatus = function(){
             parameter_group.addChild(makeLabel(parameters[i][0] + ": " + parameters[i][1], 0, parseInt(sprite_height * 2 / (7 * 3) * i), "#ffffff"));
         }
         this.view.status.addChild(parameter_group);
+
+        var item_group = new Group();
+        item_group.x = parseInt(sprite_width / 2);
+        item_group.y = parseInt(sprite_height / 3);
+        for(var i = 0; i < Master.max_item_number; i++){
+            if(i < unit.items.length){
+                var item = unit.items[i];
+                item_group.addChild(makeLabel(item.get("name"), 0, parseInt(sprite_height * 2 / (3 * Master.max_item_number) * i), "#888800"));
+            }
+        }
+        this.view.status.addChild(item_group);
     }
 };
 
@@ -198,9 +274,30 @@ Stage.prototype.clearView = function(target){
 Stage.prototype.updateField = function(){
     this.clearView(this.view.field);
     this.drawField();
+    this.drawMoveMap();
     this.drawUnits();
     this.drawCursor();
 };
+
+Stage.prototype.drawMoveMap = function(){
+    if(this.move_map === null){
+        return;
+    }
+
+    for(var i = 0; i < this.block_size; i++){
+        for(var j = 0; j < this.block_size; j++){
+            var x = this.vertex.x + j;
+            var y = this.vertex.y + i;
+            if(this.field.valid(x, y) && this.move_map[y][x] >= 0){
+                var sprite = new Sprite(this.cell_size, this.cell_size);
+                sprite.x = j * this.cell_size;
+                sprite.y = i * this.cell_size;
+                sprite.backgroundColor = "rgba(0, 0, 255, 0.2)";
+                this.view.field.addChild(sprite);
+            }
+        }
+    }
+}
 
 Stage.prototype.focusedUnitObject = function(){
     var n = this.player.length;

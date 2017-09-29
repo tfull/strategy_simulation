@@ -19,17 +19,18 @@ var UnitData = (function(){
                     speed: 12,
                     luck: 6,
                     defense: 5,
-                    resist: 3
+                    resist: 3,
+                    movement: 6
                 },
-                weapon_ids: [1]
+                item_ids: [1, 2]
             }
         }
     ];
 
     function instantiate(expression){
         var e = expression;
-        var weapons = e.weapon_ids.map(function(id){ return WeaponData.find(id); });
-        return new Unit(e.name, e.image, UnitClassData.find(e.unit_class_id), e.parameter, weapons);
+        var items = e.item_ids.map(function(id){ return ItemData.find(id); });
+        return new Unit(e.name, e.image, UnitClassData.find(e.unit_class_id), e.parameter, items);
     }
 
     function _find(id){

@@ -8,7 +8,8 @@ var GeographyData = (function(){
                     path: "map_plain.png",
                     width: 256,
                     height: 256
-                }
+                },
+                default_cost: 1
             }
         },
         {
@@ -19,7 +20,8 @@ var GeographyData = (function(){
                     path: "map_rough.png",
                     width: 256,
                     height: 256
-                }
+                },
+                default_cost: 2
             }
         }
     ];

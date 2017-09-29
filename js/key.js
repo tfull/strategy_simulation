@@ -1,5 +1,5 @@
 function Key(){
-    this.names = ["up", "down", "left", "right", "space"];
+    this.names = ["up", "down", "left", "right", "space", "a", "b"];
     this.keys = {};
     for(var i = 0; i < this.names.length; i++){
         this.keys[this.names[i]] = 0;
@@ -21,6 +21,8 @@ function Key(){
 
 Key.prototype.bind = function(game){
     game.keybind(32, "space");
+    game.keybind(65, "a");
+    game.keybind(66, "b");
 };
 
 Key.prototype.scan = function(input){

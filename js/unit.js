@@ -1,4 +1,4 @@
-function Unit(name, image, unit_class, parameter, weapons){
+function Unit(name, image, unit_class, parameter, items){
     this.name = name;
     this.image = image;
     this.unit_class = unit_class;
@@ -12,5 +12,19 @@ function Unit(name, image, unit_class, parameter, weapons){
     this.luck = parameter.luck;
     this.defense = parameter.defense;
     this.resist = parameter.resist;
-    this.weapons = weapons;
+    this.movement = parameter.movement;
+    this.items = items;
+    this.equipment = false;
+    if(items.length > 0 && items[0].type == "weapon"){
+        this.equipment = true;
+    }
 }
+
+Unit.prototype.getMoveCost = function(geography_id){
+    var cost = this.unit_class.getMoveCost(geography_id);
+    if(cost == -1){
+        return GeographyData.find(geography_id).default_cost;
+    }else{
+        return cost;
+    }
+};

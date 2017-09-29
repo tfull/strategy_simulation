@@ -1,19 +1,28 @@
-var WeaponData = (function(){
+var ItemData = (function(){
     var data = [
         {
             id: 1,
             expression: {
                 name: "ponkikki sword",
-                type: "sword",
+                type: "weapon",
+                weapon_type: "sword",
                 power: 3,
                 accuracy: 80
             }
+        },
+        {
+            id: 2,
+            expression: {
+                name: "傷薬",
+                type: "heal",
+                recovery_point: 20,
+                number: 8
+            }
         }
-
     ];
 
     function instantiate(expression){
-        return new Weapon(expression.name, expression.type, expression.power, expression.accuracy);
+        return new Item(expression);
     }
 
     function _find(id){

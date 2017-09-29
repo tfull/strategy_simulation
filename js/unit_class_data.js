@@ -5,7 +5,8 @@ var UnitClassData = (function(){
             reference: false,
             expression: {
                 name: "sword man",
-                next_class_id: null
+                next_class_id: null,
+                special_move_cost: []
             }
         }
     ];
