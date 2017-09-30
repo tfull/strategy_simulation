@@ -10,3 +10,7 @@ Point.prototype.equal = function(p){
 Point.prototype.sub = function(p){
     return new Point(this.x - p.x, this.y - p.y);
 };
+
+Point.prototype.clone = function(){
+    return new Point(this.x, this.y);
+};

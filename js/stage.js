@@ -21,6 +21,7 @@ function Stage(assets){
 
     this.mode = "field";
     this.move_map = null;
+    this.selected_unit_object = null;
 }
 
 Stage.prototype.load = function(args){
@@ -28,8 +29,12 @@ Stage.prototype.load = function(args){
     var field = stage.field;
     this.field = field;
     this.player = stage.player;
+    for(var i = 0; i < this.player.length; i++){
+        this.player[i].selected = false;
+        this.player[i].temporary_point = null;
+    }
     this.enemy = stage.enemy;
-    this.cursor = new Point(this.player[0].point.x, this.player[0].point.y);
+    this.cursor = this.player[0].point.clone();
 
     if(field.width < this.block_size){
         this.vertex.x = parseInt((field.width - this.block_size) / 2);
@@ -65,8 +70,16 @@ Stage.prototype.drawField = function(){
 Stage.prototype.drawUnits = function(){
     for(var i = 0; i < this.player.length; i++){
         var object = this.player[i];
-        var j_cell = object.point.x - this.vertex.x;
-        var i_cell = object.point.y - this.vertex.y;
+        var j_cell;
+        var i_cell;
+
+        if(object.temporary_point !== null){
+            j_cell = object.temporary_point.x - this.vertex.x;
+            i_cell = object.temporary_point.y - this.vertex.y;
+        }else{
+            j_cell = object.point.x - this.vertex.x;
+            i_cell = object.point.y - this.vertex.y;
+        }
 
         if(j_cell >= 0 && j_cell < this.block_size && i_cell >= 0 && i_cell < this.block_size){
             var image = object.unit.image;
@@ -102,8 +115,12 @@ Stage.prototype.drawCursor = function(){
     }
 };
 
+Stage.prototype.cursorValid = function(){
+    return this.mode == "field" || this.mode == "movement" || this.mode == "action";
+};
+
 Stage.prototype.keyLeft = function(){
-    if(this.mode == "field"){
+    if(this.cursorValid()){
         if(this.cursor.x > 0){
             this.cursor.x -= 1;
             if(this.cursor.x < this.vertex.x){
@@ -116,7 +133,7 @@ Stage.prototype.keyLeft = function(){
 };
 
 Stage.prototype.keyRight = function(){
-    if(this.mode == "field"){
+    if(this.cursorValid()){
         if(this.cursor.x < this.field.width - 1){
             this.cursor.x += 1;
             if(this.cursor.x > this.vertex.x + (this.block_size - 1)){
@@ -129,7 +146,7 @@ Stage.prototype.keyRight = function(){
 };
 
 Stage.prototype.keyUp = function(){
-    if(this.mode == "field"){
+    if(this.cursorValid()){
         if(this.cursor.y > 0){
             this.cursor.y -= 1;
             if(this.cursor.y < this.vertex.y){
@@ -142,7 +159,7 @@ Stage.prototype.keyUp = function(){
 };
 
 Stage.prototype.keyDown = function(){
-    if(this.mode == "field"){
+    if(this.cursorValid()){
         if(this.cursor.y < this.field.height - 1){
             this.cursor.y += 1;
             if(this.cursor.y > this.vertex.y + (this.block_size - 1)){
@@ -158,11 +175,39 @@ Stage.prototype.keyA = function(){
     if(this.mode == "field"){
         var unit_object = this.focusedUnitObject();
         if(unit_object !== null && unit_object.affiliation == "player"){
-            this.mode == "movement";
+            unit_object.selected = true;
+            this.selected_unit_object = unit_object;
+            this.mode = "movement";
             var move_map = this.searchMovement(unit_object);
             this.move_map = move_map;
             this.updateField();
         }
+    }else if(this.mode == "movement"){
+        if(this.move_map[this.cursor.y][this.cursor.x] >= 0){
+            var unit_object = this.selected_unit_object;
+            unit_object.temporary_point = this.cursor.clone();
+            this.mode = "action";
+            this.move_map = null;
+            this.updateField();
+        }
+    }else if(this.mode == "action"){
+    }
+};
+
+Stage.prototype.keyB = function(){
+    if(this.mode == "movement"){
+        var unit_object = this.selected_unit_object;
+        this.mode = "field";
+        unit_object.selected = false;
+        this.selected_unit_object = null;
+        this.move_map = null;
+        this.updateField();
+    }else if(this.mode == "action"){
+        var unit_object = this.selected_unit_object;
+        this.mode = "movement";
+        unit_object.temporary_point = null;
+        this.move_map = this.searchMovement(unit_object);
+        this.updateField();
     }
 };
 
