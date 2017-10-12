@@ -10,27 +10,27 @@ var UnitData = (function(){
                     height: 256
                 },
                 unit_class_id: 1,
-                parameter: {
-                    level: 1,
-                    hit_point: 20,
-                    power: 8,
-                    magic: 1,
-                    technique: 11,
-                    speed: 12,
-                    luck: 6,
-                    defense: 5,
-                    resist: 3,
-                    movement: 6
-                },
+                level: 1,
+                hit_point: 20,
+                power: 8,
+                magic: 1,
+                technique: 11,
+                speed: 12,
+                luck: 6,
+                defense: 5,
+                resist: 3,
+                movement: 6,
+                sword: 2,
+                lance: 0,
+                axe: 0,
+                bow: 0,
                 item_ids: [1, 2]
             }
         }
     ];
 
     function instantiate(expression){
-        var e = expression;
-        var items = e.item_ids.map(function(id){ return ItemData.find(id); });
-        return new Unit(e.name, e.image, UnitClassData.find(e.unit_class_id), e.parameter, items);
+        return new Unit(expression);
     }
 
     function _find(id){

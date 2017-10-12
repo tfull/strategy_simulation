@@ -15,3 +15,11 @@ Option.prototype.up = function(){
 Option.prototype.down = function(){
     this.index = (this.index + this.size - 1) % this.size;
 };
+
+Option.prototype.list = function(){
+    var result = [];
+    for(var i = 0; i < this.size; i++){
+        result.push({ selected: i == this.index, value: this.choices[i] });
+    }
+    return result;
+};

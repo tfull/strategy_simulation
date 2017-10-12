@@ -1,8 +1,7 @@
 function Item(object){
-    this.data = object;
-    if(! (object.number === undefined)){
-        this.data["max_number"] = object.number;
-    }
+    this.name = object.name;
+    this.number = object.number;
+    this.max_number = object.number;
 }
 
 Item.prototype.get = function(s){

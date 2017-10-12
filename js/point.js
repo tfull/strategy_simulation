@@ -14,3 +14,7 @@ Point.prototype.sub = function(p){
 Point.prototype.clone = function(){
     return new Point(this.x, this.y);
 };
+
+Point.prototype.distance = function(p){
+    return Math.abs(this.x - p.x) + Math.abs(this.y - p.y);
+};

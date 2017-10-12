@@ -8,6 +8,10 @@ Field.prototype.at = function(x, y){
     return this.field[y][x];
 };
 
+Field.prototype.pointAt = function(p){
+    return this.field[p.y][p.x];
+};
+
 Field.prototype.valid = function(x, y){
     return x >= 0 && x < this.width && y >= 0 && y < this.height;
 };

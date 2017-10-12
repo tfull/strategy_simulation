@@ -6,6 +6,15 @@ function makeLabel(s, x, y, c){
     return label;
 }
 
+function makeGroup(x, y, width, height){
+    var group = new Group();
+    group.x = x;
+    group.y = y;
+    group.width = width;
+    group.height = height;
+    return group;
+}
+
 function getImagePath(path){
     return "img/" + path;
 }
@@ -34,3 +43,18 @@ function makeImageSprite(image, width, height, x, y){
     sprite.y = y - (1 - sprite.scaleY) / 2 * image.height;
     return sprite;
 }
+
+Array.prototype.flatten = function(){
+    return [].concat.apply([], this);
+};
+
+Array.prototype.unique = function(){
+    var result = [];
+    var n = this.length;
+    for(var i = 0; i < n; i++){
+        if(! result.includes(this[i])){
+            result.push(this[i]);
+        }
+    }
+    return result;
+};

@@ -5,23 +5,24 @@ function Stage(assets){
     this.assets = assets;
     this.scene = new Scene();
     this.scene.backgroundColor = "#eeeecc";
-    var view_field = new Group();
-    view_field.x = 0;
-    view_field.y = 0;
-    var view_status = new Group();
-    view_status.x = Master.screen_height;
-    view_status.y = 0;
-    this.view = { field: view_field, status: view_status };
+    var view_field = makeGroup(0, 0, Master.screen_height, Master.screen_height);
+    var view_status = makeGroup(Master.screen_height, 0, Master.screen_width - Master.screen_height, parseInt(Master.screen_height / 2));
+    var view_operation = makeGroup(Master.screen_height, parseInt(Master.screen_height / 2), Master.screen_width - Master.screen_height, parseInt(Master.screen_height / 2));
+    this.view = { field: view_field, status: view_status, operation: view_operation };
     this.vertex = new Point(1, 1);
 
     this.cursor = new Point(0, 0);
 
     this.scene.addChild(this.view.field);
     this.scene.addChild(this.view.status);
+    this.scene.addChild(this.view.operation);
 
     this.mode = "field";
     this.move_map = null;
     this.selected_unit_object = null;
+    this.attack_map = null;
+    this.menu_action;
+    this.estimation;
 }
 
 Stage.prototype.load = function(args){
@@ -116,7 +117,7 @@ Stage.prototype.drawCursor = function(){
 };
 
 Stage.prototype.cursorValid = function(){
-    return this.mode == "field" || this.mode == "movement" || this.mode == "action";
+    return this.mode == "field" || this.mode == "movement" || this.mode == "select attack";
 };
 
 Stage.prototype.keyLeft = function(){
@@ -155,6 +156,9 @@ Stage.prototype.keyUp = function(){
             this.updateField();
             this.updateStatus();
         }
+    }else if(this.mode == "menu action"){
+        this.menu_action.down();
+        this.updateOperation();
     }
 };
 
@@ -168,6 +172,9 @@ Stage.prototype.keyDown = function(){
             this.updateField();
             this.updateStatus();
         }
+    }else if(this.mode == "menu action"){
+        this.menu_action.up();
+        this.updateOperation();
     }
 };
 
@@ -186,11 +193,46 @@ Stage.prototype.keyA = function(){
         if(this.move_map[this.cursor.y][this.cursor.x] >= 0){
             var unit_object = this.selected_unit_object;
             unit_object.temporary_point = this.cursor.clone();
-            this.mode = "action";
-            this.move_map = null;
+            this.mode = "menu action";
+            menu = []
+            if(unit_object.unit.getAttackRange().length > 0){
+                menu.push("attack");
+            }
+            menu.push("wait");
+            this.menu_action = new Option(menu);
             this.updateField();
+            this.updateOperation();
         }
-    }else if(this.mode == "action"){
+    }else if(this.mode == "menu action"){
+        var option = this.menu_action.getValue();
+        if(option == "attack"){
+            var attack_map = this.searchAttack(this.selected_unit_object);
+            this.attack_map = attack_map;
+            this.mode = "select attack";
+            this.updateField();
+        }else if(option == "wait"){
+            var unit_object = this.selected_unit_object;
+            unit_object.point = unit_object.temporary_point;
+            unit_object.temporary_point = null;
+            this.mode = "field";
+            this.updateField();
+            this.updateStatus();
+            this.updateOperation();
+        }
+    }else if(this.mode == "select attack"){
+        var dist = this.attack_map[this.cursor.y][this.cursor.x];
+        var focused = this.focusedUnitObject();
+        if(dist >= 0 && focused !== null && focused.affiliation == "enemy"){
+            var unit_object = this.selected_unit_object;
+            var weapons = unit_object.unit.getUsableWeapons(dist);
+            this.menu_weapon = new Option(weapons);
+            this.mode = "menu weapon";
+            this.updateOperation();
+        }
+    }else if(this.mode == "menu weapon"){
+        this.estimation = this.estimateBattle(this.selected_unit_object, this.focusedUnitObject(), this.menu_weapon.getValue());
+        this.mode = "battle estimation";
+        this.updateOperation();
     }
 };
 
@@ -200,15 +242,62 @@ Stage.prototype.keyB = function(){
         this.mode = "field";
         unit_object.selected = false;
         this.selected_unit_object = null;
-        this.move_map = null;
         this.updateField();
-    }else if(this.mode == "action"){
+    }else if(this.mode == "menu action"){
         var unit_object = this.selected_unit_object;
         this.mode = "movement";
         unit_object.temporary_point = null;
-        this.move_map = this.searchMovement(unit_object);
         this.updateField();
+        this.updateOperation();
+    }else if(this.mode == "select attack"){
+        this.mode = "menu action";
+        this.updateField();
+        this.updateOperation();
     }
+};
+
+Stage.prototype.estimateBattle = function(source, target, weapon){
+    var power = weapon.power;
+    if(weapon.attribute == "physical"){
+        power += source.unit.power;
+    }else{
+        power += source.unit.magic;
+    }
+    var source_record = { affiliation: "player", attack: true, power: power, attribute: weapon.attribute, accuracy: source.unit.getAccuracy() + weapon.accuracy, avoidance: source.unit.getAvoidance() + GeographyData.find(this.field.pointAt(source.temporary_point)).avoidance, times: 1 };
+    var target_record = { affiliation: "enemy", attack: false, avoidance: target.unit.getAvoidance() + GeographyData.find(this.field.pointAt(this.cursor)).avoidance };
+    if(target.unit.equipment){
+        weapon = target.unit.items[0];
+        power = weapon.power;
+        if(target.unit.items[0].attribute == "physical"){
+            power += target.unit.power;
+        }else{
+            power += target.unit.magic;
+        }
+        target_record.attack = true;
+        target_record.power = power;
+        target_record.attribute = weapon.attribute;
+        target_record.accuracy = weapon.accuracy + target.unit.getAccuracy();
+        target_record.times = 1;
+    }
+    if(source_record.attribute == "physical"){
+        target_record.defense = target.unit.defense;
+    }else{
+        target_record.defense = target.unit.resist;
+    }
+    if(target_record.attack){
+        if(target_record.attribute == "physical"){
+            source_record.defense = source.unit.defense;
+        }else{
+            source_record.defense = source.unit.resist;
+        }
+    }
+    var speed_diff = source.unit.getSpeed() - target.unit.getSpeed();
+    if(speed_diff >= 4){
+        source.times *= 2;
+    }else if(target_record.attack && speed_diff <= -4){
+        target.times *= 2;
+    }
+    return { source: source_record, target: target_record };
 };
 
 Stage.prototype.searchMovement = function(unit_object){
@@ -263,6 +352,29 @@ Stage.prototype.searchMovement = function(unit_object){
     return move_map;
 };
 
+Stage.prototype.searchAttack = function(unit_object){
+    var unit = unit_object.unit;
+    var unit_point = unit_object.temporary_point;
+    var range = unit.getAttackRange();
+    var attack_map = this.field.clone();
+    for(var i = 0; i < this.field.height; i++){
+        for(var j = 0; j < this.field.width; j++){
+            var distance = unit_point.distance(new Point(j, i));
+            if(range.includes(distance)){
+                attack_map[i][j] = distance;
+            }else{
+                attack_map[i][j] = -1;
+            }
+        }
+    }
+
+    return attack_map;
+};
+
+Stage.prototype.searchAction = function(){
+    var unit_object = this.selected_unit_object;
+};
+
 Stage.prototype.drawStatus = function(){
     var sprite_width = Master.screen_width - Master.screen_height;
     var sprite_height = parseInt(Master.screen_height / 2);
@@ -298,7 +410,7 @@ Stage.prototype.drawStatus = function(){
         for(var i = 0; i < Master.max_item_number; i++){
             if(i < unit.items.length){
                 var item = unit.items[i];
-                item_group.addChild(makeLabel(item.get("name"), 0, parseInt(sprite_height * 2 / (3 * Master.max_item_number) * i), "#888800"));
+                item_group.addChild(makeLabel(item.name, 0, parseInt(sprite_height * 2 / (3 * Master.max_item_number) * i), "#888800"));
             }
         }
         this.view.status.addChild(item_group);
@@ -319,7 +431,12 @@ Stage.prototype.clearView = function(target){
 Stage.prototype.updateField = function(){
     this.clearView(this.view.field);
     this.drawField();
-    this.drawMoveMap();
+    if(this.mode == "movement"){
+        this.drawMoveMap();
+    }
+    if(this.mode == "select attack"){
+        this.drawAttackMap();
+    }
     this.drawUnits();
     this.drawCursor();
 };
@@ -337,12 +454,121 @@ Stage.prototype.drawMoveMap = function(){
                 var sprite = new Sprite(this.cell_size, this.cell_size);
                 sprite.x = j * this.cell_size;
                 sprite.y = i * this.cell_size;
-                sprite.backgroundColor = "rgba(0, 0, 255, 0.2)";
+                sprite.backgroundColor = "rgba(0, 0, 255, 0.4)";
                 this.view.field.addChild(sprite);
             }
         }
     }
 }
+
+Stage.prototype.drawAttackMap = function(){
+    if(this.attack_map === null){
+        return;
+    }
+
+    for(var i = 0; i < this.block_size; i++){
+        for(var j = 0; j < this.block_size; j++){
+            var x = this.vertex.x + j;
+            var y = this.vertex.y + i;
+            if(this.field.valid(x, y) && this.attack_map[y][x] >= 0){
+                var sprite = new Sprite(this.cell_size, this.cell_size);
+                sprite.x = j * this.cell_size;
+                sprite.y = i * this.cell_size;
+                sprite.backgroundColor = "rgba(255, 0, 0, 0.4)";
+                this.view.field.addChild(sprite);
+            }
+        }
+    }
+};
+
+Stage.prototype.updateOperation = function(){
+    this.clearView(this.view.operation);
+    if(this.mode == "menu action"){
+        this.drawActionMenu();
+    }
+    if(this.mode == "menu weapon" || this.mode == "battle estimation"){
+        this.drawWeaponMenu();
+    }
+    if(this.mode == "battle estimation"){
+        this.drawBattleEstimation();
+    }
+};
+
+Stage.prototype.drawActionMenu = function(){
+    var height = this.view.operation.height;
+    var group = new Group();
+    var back = new Sprite(this.view.operation.width, this.view.operation.height);
+    back.x = 0;
+    back.y = 0;
+    back.backgroundColor = "rgba(0, 0, 0, 0.4)";
+    this.view.operation.addChild(back);
+    var vsize = parseInt(height / Math.max(this.menu_action.size, 8));
+    var label = makeLabel("行動", 0, 0, "#ffffff");
+    group.addChild(label);
+    var items = this.menu_action.list();
+    for(var i = 0; i < items.length; i++){
+        var item = items[i];
+        var color = "#ffffff";
+        if(item.selected){
+            color = "#ffff00";
+        }
+        label = makeLabel(item.value, 0, (i + 1) * vsize, color);
+        group.addChild(label);
+    }
+    this.view.operation.addChild(group);
+};
+
+Stage.prototype.drawWeaponMenu = function(){
+    var height = this.view.operation.height;
+    var group = new Group();
+    var back = new Sprite(this.view.operation.width, this.view.operation.height);
+    back.x = 0;
+    back.y = 0;
+    back.backgroundColor = "rgba(0, 0, 0, 0.4)";
+    this.view.operation.addChild(back);
+    var vsize = parseInt(height / Math.max(this.menu_weapon.size, 8));
+    var label = makeLabel("武器", 0, 0, "#ffffff");
+    group.addChild(label);
+    var items = this.menu_weapon.list();
+    for(var i = 0; i < items.length; i++){
+        var item = items[i];
+        var color = "#ffffff";
+        if(item.selected){
+            color = "#ffff00";
+        }
+        label = makeLabel(item.value.name, 0, (i + 1) * vsize, color);
+        group.addChild(label);
+    }
+    this.view.operation.addChild(group);
+};
+
+Stage.prototype.drawBattleEstimation = function(){
+    var group = new Group();
+    group.x = parseInt(this.view.operation.width / 2);
+    group.y = 0;
+    var sprite = new Sprite(parseInt(this.view.operation.width / 4), this.view.operation.height);
+    sprite.backgroundColor = "rgba(255, 0, 0, 1)";
+    sprite.x = parseInt(this.view.operation.width / 4);
+    group.addChild(sprite);
+    var sprite = new Sprite(parseInt(this.view.operation.width / 4), this.view.operation.height);
+    sprite.backgroundColor = "rgba(0, 0, 255, 1)";
+    group.addChild(sprite);
+    var source = this.estimation.source;
+    var target = this.estimation.target;
+    items = ["damage", source.power - target.defense, "accuracy", source.accuracy - target.avoidance];
+    for(var i = 0; i < items.length; i++){
+        group.addChild(makeLabel(items[i], 0, i * parseInt(this.view.operation.height / items.length), "#ffffff"));
+    }
+    if(target.attack){
+        items = ["damage", target.power - source.defense, "accuracy", target.accuracy - source.avoidance];
+    }else{
+        items = ["damage", "-", "accuracy", "-"];
+    }
+    for(var i = 0; i < items.length; i++){
+        group.addChild(makeLabel(items[i], parseInt(this.view.operation.width / 4), i * parseInt(this.view.operation.height / items.length), "#ffffff"));
+    }
+    this.view.operation.addChild(group);
+};
 
 Stage.prototype.focusedUnitObject = function(){
     var n = this.player.length;
