@@ -85,3 +85,10 @@ Unit.prototype.getAccuracy = function(){
 Unit.prototype.getSpeed = function(){
     return this.speed;
 };
+
+Unit.prototype.getDamage = function(damage){
+    this.hit_point -= damage;
+    if(this.hit_point < 0){
+        this.hit_point = 0;
+    }
+};

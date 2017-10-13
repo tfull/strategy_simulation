@@ -23,6 +23,9 @@ function Stage(assets){
     this.attack_map = null;
     this.menu_action;
     this.estimation;
+    this.yes_no;
+    this.animation = new Animation();
+    this.battle;
 }
 
 Stage.prototype.load = function(args){
@@ -232,7 +235,15 @@ Stage.prototype.keyA = function(){
     }else if(this.mode == "menu weapon"){
         this.estimation = this.estimateBattle(this.selected_unit_object, this.focusedUnitObject(), this.menu_weapon.getValue());
         this.mode = "battle estimation";
+        this.yes_no = new Option(["Yes", "No"]);
         this.updateOperation();
+    }else if(this.mode == "battle estimation"){
+        if(this.yes_no.getValue() == "Yes"){
+            this.mode = "battle";
+            this.battle = { source: this.selected_unit_object, target: this.focusedUnitObject() };
+        }else{
+            this.mode = "menu weapon";
+        }
     }
 };
 
@@ -263,9 +274,11 @@ Stage.prototype.estimateBattle = function(source, target, weapon){
     }else{
         power += source.unit.magic;
     }
+    var order = ["source"];
     var source_record = { affiliation: "player", attack: true, power: power, attribute: weapon.attribute, accuracy: source.unit.getAccuracy() + weapon.accuracy, avoidance: source.unit.getAvoidance() + GeographyData.find(this.field.pointAt(source.temporary_point)).avoidance, times: 1 };
     var target_record = { affiliation: "enemy", attack: false, avoidance: target.unit.getAvoidance() + GeographyData.find(this.field.pointAt(this.cursor)).avoidance };
-    if(target.unit.equipment){
+    var distance = source.temporary_point.distance(target.point);
+    if(target.unit.equipment && target.unit.items[0].reach(distance)){
         weapon = target.unit.items[0];
         power = weapon.power;
         if(target.unit.items[0].attribute == "physical"){
@@ -273,6 +286,7 @@ Stage.prototype.estimateBattle = function(source, target, weapon){
         }else{
             power += target.unit.magic;
         }
+        order.push("target");
         target_record.attack = true;
         target_record.power = power;
         target_record.attribute = weapon.attribute;
@@ -294,10 +308,12 @@ Stage.prototype.estimateBattle = function(source, target, weapon){
     var speed_diff = source.unit.getSpeed() - target.unit.getSpeed();
     if(speed_diff >= 4){
         source.times *= 2;
+        order.push("source");
     }else if(target_record.attack && speed_diff <= -4){
         target.times *= 2;
+        order.push("target");
     }
-    return { source: source_record, target: target_record };
+    return { source: source_record, target: target_record, order: order };
 };
 
 Stage.prototype.searchMovement = function(unit_object){
@@ -586,4 +602,51 @@ Stage.prototype.focusedUnitObject = function(){
         }
     }
     return null;
+};
+
+Stage.prototype.locateImageOnField = function(image, point){
+    var j_cell = point.x - this.vertex.x;
+    var i_cell = point.y - this.vertex.y;
+
+    if(j_cell >= 0 && j_cell < this.block_size && i_cell >= 0 && i_cell < this.block_size){
+        var sprite = makeImageSprite(image, this.cell_size, this.cell_size, j_cell * this.cell_size, i_cell * this.cell_size);
+        sprite.image = getImage(this.assets, image.path);
+        this.view.field.addChild(sprite);
+        return sprite;
+    }
+};
+
+Stage.prototype.stepBattle = function(){
+    if(this.estimation.order.length > 0){
+        if(this.estimation.order.shift() == "source"){
+            var damage = Math.max(0, this.estimation.source.power - this.estimation.target.defense);
+            var accuracy = this.estimation.source.accuracy - this.estimation.target.avoidance;
+            if(Math.random() * 100 < accuracy){
+                this.battle.target.unit.getDamage(damage);
+                this.locateImageOnField(AnimationImage.findByName("damage"), this.battle.target.point).tl.fadeOut(24);
+            }else{
+                this.locateImageOnField(AnimationImage.findByName("miss"), this.battle.target.point).tl.fadeOut(24);
+            }
+            this.animation.add([[null, 24]]);
+        }else{
+            var damage = Math.max(0, this.estimation.target.power - this.estimation.source.defense);
+            var accuracy = this.estimation.target.accuracy - this.estimation.source.avoidance;
+            if(Math.random() * 100 < accuracy){
+                this.battle.source.unit.getDamage(damage);
+                this.locateImageOnField(AnimationImage.findByName("damage"), this.battle.source.temporary_point).tl.fadeOut(24);
+            }else{
+                this.locateImageOnField(AnimationImage.findByName("miss"), this.battle.source.temporary_point).tl.fadeOut(24);
+            }
+            this.animation.add([[null, 24]]);
+        }
+    }else{
+        this.mode = "field";
+        var source = this.battle.source;
+        source.point = source.temporary_point;
+        source.temporary_point = null;
+    }
+};
+
+Stage.prototype.inBattle = function(){
+    return this.mode == "battle";
 };

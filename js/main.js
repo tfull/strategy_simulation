@@ -7,6 +7,7 @@
         key.bind(game);
         GeographyData.load(game);
         UnitData.load(game);
+        AnimationImage.load(game);
         var title = new Title(game.assets);
         var stage = new Stage(game.assets);
         var mode = "title";
@@ -41,23 +42,29 @@
                 }
                 game.pushScene(title.scene);
             }else if(mode == "stage"){
-                if(key.up()){
-                    stage.keyUp();
-                }
-                if(key.down()){
-                    stage.keyDown();
-                }
-                if(key.left()){
-                    stage.keyLeft();
-                }
-                if(key.right()){
-                    stage.keyRight();
-                }
-                if(key.valid("a", "one")){
-                    stage.keyA();
-                }
-                if(key.valid("b", "one")){
-                    stage.keyB();
+                if(stage.animation.work()){
+                    stage.animation.step();
+                }else if(stage.inBattle()){
+                    stage.stepBattle();
+                }else{
+                    if(key.up()){
+                        stage.keyUp();
+                    }
+                    if(key.down()){
+                        stage.keyDown();
+                    }
+                    if(key.left()){
+                        stage.keyLeft();
+                    }
+                    if(key.right()){
+                        stage.keyRight();
+                    }
+                    if(key.valid("a", "one")){
+                        stage.keyA();
+                    }
+                    if(key.valid("b", "one")){
+                        stage.keyB();
+                    }
                 }
                 game.pushScene(stage.scene);
             }
