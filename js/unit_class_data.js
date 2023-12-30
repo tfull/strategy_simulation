@@ -8,6 +8,15 @@ var UnitClassData = (function(){
                 next_class_id: null,
                 special_move_cost: []
             }
+        },
+        {
+            id: 2,
+            reference: false,
+            expression: {
+                name: "lance man",
+                next_class_id: null,
+                special_move_cost: []
+            }
         }
     ];
 

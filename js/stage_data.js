@@ -11,7 +11,7 @@ var StageData = (function(){
                     [1, 1, 2, 2, 2]
                 ],
                 player: [{ unit_id: 1, x: 3, y: 3 }],
-                enemy: [{ unit_id: 1, x: 1, y: 1 }]
+                enemy: [{ unit_id: 1, x: 1, y: 1 }, { unit_id: 2, x: 1, y: 3 }]
             }
         },
         {

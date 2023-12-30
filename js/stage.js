@@ -181,8 +181,10 @@ Stage.prototype.keyDown = function(){
     }
 };
 
+
+// Aボタンが押されたときの反応
 Stage.prototype.keyA = function(){
-    if(this.mode == "field"){
+    if (this.mode == "field") {
         var unit_object = this.focusedUnitObject();
         if(unit_object !== null && unit_object.affiliation == "player"){
             unit_object.selected = true;
@@ -192,7 +194,8 @@ Stage.prototype.keyA = function(){
             this.move_map = move_map;
             this.updateField();
         }
-    }else if(this.mode == "movement"){
+    }
+    else if (this.mode == "movement") {
         if(this.move_map[this.cursor.y][this.cursor.x] >= 0){
             var unit_object = this.selected_unit_object;
             unit_object.temporary_point = this.cursor.clone();
@@ -206,7 +209,8 @@ Stage.prototype.keyA = function(){
             this.updateField();
             this.updateOperation();
         }
-    }else if(this.mode == "menu action"){
+    }
+    else if (this.mode == "menu action") {
         var option = this.menu_action.getValue();
         if(option == "attack"){
             var attack_map = this.searchAttack(this.selected_unit_object);
@@ -222,7 +226,8 @@ Stage.prototype.keyA = function(){
             this.updateStatus();
             this.updateOperation();
         }
-    }else if(this.mode == "select attack"){
+    }
+    else if (this.mode == "select attack") {
         var dist = this.attack_map[this.cursor.y][this.cursor.x];
         var focused = this.focusedUnitObject();
         if(dist >= 0 && focused !== null && focused.affiliation == "enemy"){
@@ -232,12 +237,14 @@ Stage.prototype.keyA = function(){
             this.mode = "menu weapon";
             this.updateOperation();
         }
-    }else if(this.mode == "menu weapon"){
+    }
+    else if (this.mode == "menu weapon") {
         this.estimation = this.estimateBattle(this.selected_unit_object, this.focusedUnitObject(), this.menu_weapon.getValue());
         this.mode = "battle estimation";
         this.yes_no = new Option(["Yes", "No"]);
         this.updateOperation();
-    }else if(this.mode == "battle estimation"){
+    }
+    else if (this.mode == "battle estimation") {
         if(this.yes_no.getValue() == "Yes"){
             this.mode = "battle";
             this.battle = { source: this.selected_unit_object, target: this.focusedUnitObject() };
@@ -247,25 +254,29 @@ Stage.prototype.keyA = function(){
     }
 };
 
+// Bボタンが押されたときの反応
 Stage.prototype.keyB = function(){
-    if(this.mode == "movement"){
+    if (this.mode == "movement") {
         var unit_object = this.selected_unit_object;
         this.mode = "field";
         unit_object.selected = false;
         this.selected_unit_object = null;
         this.updateField();
-    }else if(this.mode == "menu action"){
+    }
+    else if (this.mode == "menu action") {
         var unit_object = this.selected_unit_object;
         this.mode = "movement";
         unit_object.temporary_point = null;
         this.updateField();
         this.updateOperation();
-    }else if(this.mode == "select attack"){
+    }
+    else if (this.mode == "select attack") {
         this.mode = "menu action";
         this.updateField();
         this.updateOperation();
     }
 };
+
 
 Stage.prototype.estimateBattle = function(source, target, weapon){
     var power = weapon.power;
